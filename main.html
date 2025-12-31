@@ -772,12 +772,27 @@
         card.addEventListener('dragstart', function(e) {
           dragSrc = card;
           card.classList.add('dragging');
-          // 모든 카드에 취소선/휴지통 표시
-          container.querySelectorAll('.todo-card').forEach(c => {
-            c.classList.add('drag-cancel');
-            const t = c.querySelector('.drag-trash');
-            if (t) t.style.display = 'block';
-          });
+          // 두 컨테이너의 모든 카드에 대해 토글
+          const userContainer = document.getElementById('todoListContainer');
+          const emailContainer = document.getElementById('emailTodoListContainer');
+          const allCards = [
+            ...(userContainer ? Array.from(userContainer.querySelectorAll('.todo-card')) : []),
+            ...(emailContainer ? Array.from(emailContainer.querySelectorAll('.todo-card')) : [])
+          ];
+          const anyActive = allCards.some(c => c.classList.contains('drag-cancel'));
+          if (anyActive) {
+            allCards.forEach(c => {
+              c.classList.remove('drag-cancel');
+              const t = c.querySelector('.drag-trash');
+              if (t) t.style.display = '';
+            });
+          } else {
+            allCards.forEach(c => {
+              c.classList.add('drag-cancel');
+              const t = c.querySelector('.drag-trash');
+              if (t) t.style.display = 'block';
+            });
+          }
           e.dataTransfer.effectAllowed = 'move';
         });
         card.addEventListener('dragend', function() {
