@@ -63,6 +63,31 @@
     
     /* 할일 카드 스타일 */
     .todo-card { position: relative; background: #fff; border-radius: 12px; padding: 14px; margin-bottom: 12px; box-shadow: 0 2px 10px rgba(0, 180, 154, 0.08); border-left: 5px solid #02b69b; transition: 0.2s; cursor: pointer; }
+    .todo-card.drag-cancel {
+      opacity: 0.7;
+    }
+    .todo-card.drag-cancel .todo-content {
+      text-decoration: line-through;
+      color: #7be2c5;
+    }
+    .todo-card .drag-trash {
+      display: none;
+      position: absolute;
+      right: 18px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: #fff;
+      border-radius: 50%;
+      box-shadow: 0 2px 8px #00b49a22;
+      padding: 6px;
+      z-index: 10;
+      border: 1.5px solid #ff335e;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .todo-card.drag-cancel .drag-trash {
+      display: block;
+    }
     .todo-card.purple { background: #f5edff !important; border-left-color: #a259e4 !important; }
     .todo-card.orange { background: #fff4e6 !important; border-left-color: #ff9800 !important; }
     .todo-card.blue { background: #e6f2ff !important; border-left-color: #2196f3 !important; }
@@ -448,6 +473,9 @@
             <div class="todo-content-wrapper">
               ${isEmail ? `<span class="todo-source">보낸이: ${item.from_addr || '알 수 없음'}</span>` : ''}
                 <span class="todo-content">${isEmail && urgencyRating !== null && urgencyRating >= 4 ? '★ ' : ''}${title}</span>
+                <span class="drag-trash" title="휴지통으로 이동">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ff335e" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                </span>
             </div>
             <div class="todo-actions" style="flex-direction:column;align-items:flex-end;gap:4px;">
               ${!isDone ? `<button class="action-btn exclude-btn">제외</button>` : ''}
@@ -474,6 +502,8 @@
     function bindCardEvents(container) {
       let dragSrc = null;
       container.querySelectorAll('.todo-card').forEach(card => {
+          // 드래그 취소선/휴지통 표시용
+          const trashBtn = card.querySelector('.drag-trash');
                         // 이메일 본문보기 링크 클릭 이벤트
                         const viewBodyLink = card.querySelector('.view-body-link');
                         if (viewBodyLink && card.getAttribute('data-is-email') === 'true') {
@@ -707,12 +737,30 @@
         card.addEventListener('dragstart', function(e) {
           dragSrc = card;
           card.classList.add('dragging');
+          // 모든 카드에 취소선/휴지통 표시
+          container.querySelectorAll('.todo-card').forEach(c => {
+            c.classList.add('drag-cancel');
+            const t = c.querySelector('.drag-trash');
+            if (t) t.style.display = 'block';
+          });
           e.dataTransfer.effectAllowed = 'move';
         });
         card.addEventListener('dragend', function() {
           card.classList.remove('dragging');
+          // drag-cancel, drag-trash 상태를 유지 (아무것도 제거하지 않음)
           dragSrc = null;
         });
+                // 드래그 중 휴지통 클릭 시 삭제
+                if (trashBtn) {
+                  trashBtn.onclick = async (e) => {
+                    e.stopPropagation();
+                    const isEmail = card.getAttribute('data-is-email') === 'true';
+                    const id = Number(card.getAttribute('data-id'));
+                    if (isEmail) await window.electronAPI.setMailComplete(id, 3);
+                    else await window.electronAPI.setTodoComplete(id, 3);
+                    refreshAll();
+                  };
+                }
         card.addEventListener('dragover', function(e) {
           e.preventDefault();
           e.dataTransfer.dropEffect = 'move';
