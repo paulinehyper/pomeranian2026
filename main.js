@@ -228,6 +228,14 @@ ipcMain.handle('insert-todo', (event, { task, deadline, memo }) => {
 });
 
 // 마감일 수정
+// 할일 내용 수정
+ipcMain.handle('update-todo-content', (event, id, content) => {
+  try {
+    db.prepare('UPDATE todos SET task = ? WHERE id = ?').run(content, id);
+    notifyRefresh();
+    return { success: true };
+  } catch (err) { return { success: false, error: err.message }; }
+});
 ipcMain.handle('set-todo-deadline', (event, id, deadline) => {
   try {
     let ddayValue = 0;

@@ -595,14 +595,62 @@
         const id = Number(card.getAttribute('data-id'));
         const isEmail = card.getAttribute('data-is-email') === 'true';
 
-        // 완료 토글
-        card.querySelector('.todo-content').onclick = async () => {
-          const isDone = card.classList.contains('completed');
-          const nextFlag = isDone ? 1 : 2;
-          if (isEmail) await window.electronAPI.setMailComplete(id, nextFlag);
-          else await window.electronAPI.setTodoComplete(id, nextFlag);
-          refreshAll();
-        };
+        // 할일 편집(나의 할일만)
+        const todoContent = card.querySelector('.todo-content');
+        if (!isEmail && todoContent) {
+          todoContent.style.cursor = 'pointer';
+          todoContent.title = '클릭하여 편집';
+          todoContent.onclick = function(e) {
+            e.stopPropagation();
+            if (card.classList.contains('completed')) return;
+            // 이미 input이 있으면 무시
+            if (todoContent.querySelector('input')) return;
+            const oldValue = todoContent.textContent;
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = oldValue;
+            input.style.width = '90%';
+            input.style.fontSize = '1em';
+            input.style.borderRadius = '6px';
+            input.style.border = '1.2px solid #7be2c5';
+            input.style.padding = '2px 8px';
+            todoContent.innerHTML = '';
+            todoContent.appendChild(input);
+            input.focus();
+            let saved = false;
+            async function saveEdit() {
+              if (saved) return;
+              saved = true;
+              const newVal = input.value.trim();
+              if (newVal && newVal !== oldValue) {
+                todoContent.textContent = newVal;
+                await window.electronAPI.updateTodoContent(id, newVal);
+                setTimeout(refreshAll, 0); // 즉시 반영 후 새로고침
+              } else {
+                todoContent.textContent = oldValue;
+              }
+            }
+            input.onblur = saveEdit;
+            input.onkeydown = async function(ev) {
+              if (ev.key === 'Enter') {
+                await saveEdit();
+                // 엔터 후 input 제거(텍스트 복원)
+                // refreshAll()이 호출되면 카드가 다시 그려지므로 별도 조치 불필요
+              } else if (ev.key === 'Escape') {
+                saved = true;
+                todoContent.textContent = oldValue;
+              }
+            };
+          };
+        } else if (isEmail && todoContent) {
+          // 이메일은 기존 완료 토글 유지
+          todoContent.onclick = async () => {
+            const isDone = card.classList.contains('completed');
+            const nextFlag = isDone ? 1 : 2;
+            await window.electronAPI.setMailComplete(id, nextFlag);
+            refreshAll();
+          };
+        }
 
         // 휴지통으로 이동
         const delBtn = card.querySelector('.delete-icon-btn');

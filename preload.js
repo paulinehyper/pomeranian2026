@@ -1,6 +1,7 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('electronAPI', {
+        updateTodoContent: (id, content) => ipcRenderer.invoke('update-todo-content', id, content),
     // --- (A) 할일 관련 (Todo) ---
     getTodos: (all) => ipcRenderer.invoke('get-todos', all),
     insertTodo: (todo) => ipcRenderer.invoke('insert-todo', todo),
