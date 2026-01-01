@@ -6,7 +6,7 @@
 /* 할일카드 텍스트 초록색 계열로 변경 */
 .todo-card,
 .todo-card span {
-  color: #00b4a5 !important;
+  color: #292929 !important;
 }
 .todo-card.done,
 .todo-card.done span {
