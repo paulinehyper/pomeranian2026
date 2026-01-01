@@ -49,5 +49,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
         const subscription = (event, ...args) => callback(...args);
         ipcRenderer.on('new-todo-added', subscription);
         return () => ipcRenderer.removeListener('new-todo-added', subscription);
-    }
+    },
+
+    // --- (F) 휴지통 비우기 ---
+    deleteTrashTodos: () => ipcRenderer.invoke('delete-trash-todos')
 });

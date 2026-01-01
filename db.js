@@ -124,11 +124,13 @@ const addColumn = (table, column, type) => {
 };
 
 addColumn('emails', 'created_at', 'TEXT');
+addColumn('emails', 'deleted_at', 'TEXT');
 addColumn('mail_settings', 'port', 'TEXT');
 addColumn('mail_settings', 'mail_since', 'TEXT');
 addColumn('todos', 'deadline', 'TEXT');
 addColumn('todos', 'todo_flag', 'INTEGER DEFAULT 1');
 addColumn('todos', 'mail_flag', 'TEXT');
+addColumn('todos', 'deleted_at', 'TEXT');
 addColumn('delemail', 'memo', 'TEXT'); // 이전에 에러 났던 부분
 addColumn('delemail', 'deadline', 'TEXT'); // 마감기한 컬럼 추가
 

@@ -1,7 +1,15 @@
 
+
+
 const { app, BrowserWindow, ipcMain, Tray, Menu, dialog } = require('electron');
 const path = require('path');
 const setupMailIpc = require('./mail'); // mail.js 모듈 로드
+const db = require('./db');
+function notifyRefresh() {
+  if (mainWindow) mainWindow.webContents.send('refresh');
+}
+console.log('main.js loaded');
+// 휴지통 비우기 (todo_flag=3인 것만 삭제) - app.whenReady() 이후에 등록
 
 // 이메일 자동 할일 분류: 마감일 패턴이 있으면 todo_flag=1로 설정
 function autoClassifyEmailTodo(subject, body) {
@@ -155,7 +163,7 @@ try {
 ipcMain.handle('get-todo-emails', () => {
   try {
     // todo_flag IN (1,2) (미완료/완료 이메일 할일 모두)
-    return db.prepare('SELECT id, subject, body, received_at, deadline, from_addr, todo_flag FROM emails WHERE todo_flag IN (1,2) ORDER BY todo_flag ASC, received_at DESC').all();
+    return db.prepare('SELECT id, subject, body, received_at, deadline, from_addr, todo_flag, deleted_at FROM emails WHERE todo_flag IN (1,2,3) ORDER BY todo_flag ASC, received_at DESC').all();
   } catch (err) { return []; }
 });
 
@@ -497,6 +505,17 @@ app.whenReady().then(() => {
   createWindow(); // 창 생성
   setupMailIpc(mainWindow); // 메일 핸들러 연결
 
+  // 휴지통 비우기 IPC 핸들러 등록
+  ipcMain.handle('delete-trash-todos', () => {
+    const emailTrashCount = db.prepare('SELECT COUNT(*) AS cnt FROM emails WHERE todo_flag = 3').get().cnt;
+    const todoTrashCount = db.prepare('SELECT COUNT(*) AS cnt FROM todos WHERE todo_flag = 3').get().cnt;
+    console.log(`[휴지통 비우기] 삭제 대상: emails=${emailTrashCount}, todos=${todoTrashCount}`);
+    db.prepare('DELETE FROM todos WHERE todo_flag = 3').run();
+    db.prepare('DELETE FROM emails WHERE todo_flag = 3').run();
+    notifyRefresh();
+    return { success: true };
+  });
+
   // 트레이 설정
   tray = new Tray(iconPath);
   tray.setContextMenu(Menu.buildFromTemplate([
@@ -549,6 +568,6 @@ app.whenReady().then(() => {
 
   setInterval(syncMail, 60000);
   syncMail();
-});
 
+});
 app.on('window-all-closed', () => { if (process.platform === 'darwin') app.quit(); });

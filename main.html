@@ -1319,25 +1319,67 @@ async function renderKeywordPage() {
 }
     // 3. 휴지통
     async function renderTrashPage() {
-      widgetMain.innerHTML = `<h2 style="color:#292929;margin-bottom:10px;font-size:1em;">휴지통</h2>
-<p style="color:#292929; margin:0 0 12px 0; font-size:0.8em; font-weight:300;">완료한 할일들</p>
-
-<div id="trash-list">
-      </div>
-       `;
+      widgetMain.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <h2 style="color:#292929;margin-bottom:10px;font-size:1em;">휴지통</h2>
+          <button id="emptyTrashBtn" style="background:#ff335e;color:#fff;border:none;padding:7px 18px;border-radius:7px;font-size:0.98em;font-weight:bold;cursor:pointer;">휴지통 비우기</button>
+        </div>
+        <p style="color:#292929; margin:0 0 12px 0; font-size:0.8em; font-weight:300;">완료한 할일들</p>
+        <div id="trash-list"></div>
+      `;
  
       const todos = await window.electronAPI.getTodos('trash');
       const list = document.getElementById('trash-list');
       list.innerHTML = todos.length ? todos.map(t => `
-        <div class="todo-card" style="opacity:0.6; display:flex; justify-content:space-between; align-items:center;">
+        <div class="todo-card" style="opacity:0.6; display:flex; flex-direction:row; align-items:center;">
+          <span style="font-size:0.85em; color:#b85c5c; min-width:120px; font-weight:600; margin-right:12px;">${t.deleted_at ? `[삭제: ${t.deleted_at}]` : ''}</span>
           <span>${t.task}</span>
-          <button class="action-btn restore-btn" data-id="${t.id}" style="border-color:#888888; color:#888888;">복구</button>
+          <button class="action-btn restore-btn" data-id="${t.id}" style="border-color:#888888; color:#888888; margin-left:auto;">복구</button>
         </div>`).join('') : '<p style="text-align:center;color:#aaa;padding:20px;">휴지통이 비었습니다.</p>';
       
       list.querySelectorAll('.restore-btn').forEach(b => b.onclick = async () => {
         await window.electronAPI.setTodoComplete(Number(b.dataset.id), 1);
         renderTrashPage();
       });
+
+      // 휴지통 비우기 버튼 이벤트
+      const emptyBtn = document.getElementById('emptyTrashBtn');
+      if (emptyBtn) {
+        emptyBtn.onclick = async () => {
+          // 커스텀 팝업 생성
+          const modal = document.createElement('div');
+          modal.style.position = 'fixed';
+          modal.style.left = 0;
+          modal.style.top = 0;
+          modal.style.width = '100vw';
+          modal.style.height = '100vh';
+          modal.style.background = 'rgba(0,0,0,0.18)';
+          modal.style.display = 'flex';
+          modal.style.alignItems = 'center';
+          modal.style.justifyContent = 'center';
+          modal.style.zIndex = 9999;
+          modal.innerHTML = `
+            <div style="background:#fff;padding:32px 36px;border-radius:14px;min-width:320px;max-width:90vw;box-shadow:0 4px 24px #ff335e22;display:flex;flex-direction:column;align-items:center;gap:18px;">
+              <div style="display:flex;align-items:center;gap:10px;">
+                <img src='assets/icon.png' alt='앱 아이콘' style='width:32px;height:32px;vertical-align:middle;border-radius:8px;box-shadow:0 1px 4px #00000022;'>
+                <span style="font-weight:800;font-size:1.15em;">Pomeranian</span>
+              </div>
+              <div style="margin:12px 0 0 0;font-size:1.05em;color:#222;text-align:center;">휴지통의 모든 할일을<br><b style='color:#ff335e;'>완전히 삭제</b>할까요?</div>
+              <div style="display:flex;gap:18px;margin-top:18px;">
+                <button id="confirmEmptyTrash" style="background:#ff335e;color:#fff;border:none;border-radius:6px;padding:8px 18px;font-size:1em;cursor:pointer;">삭제</button>
+                <button id="cancelEmptyTrash" style="background:#e0e0e0;color:#888;border:none;border-radius:6px;padding:8px 18px;font-size:1em;cursor:pointer;">취소</button>
+              </div>
+            </div>
+          `;
+          document.body.appendChild(modal);
+          document.getElementById('confirmEmptyTrash').onclick = async () => {
+            await window.electronAPI.deleteTrashTodos();
+            modal.remove();
+            renderTrashPage();
+          };
+          document.getElementById('cancelEmptyTrash').onclick = () => modal.remove();
+        };
+      }
     }
 
     // 사이드바 이벤트
