@@ -228,12 +228,15 @@
             <circle cx="12" cy="15" r="1.5" fill="#2196f3"/>
           </svg>
         </button>
-        <div id="colorPalettePopup" style="display:none;position:absolute;top:54px;right:60px;z-index:1000;background:#fff;border:1.5px solid #00b49a;border-radius:12px;box-shadow:0 4px 16px #00b49a22;padding:16px 18px;gap:12px;flex-wrap:wrap;min-width:180px;">
+        <div id="colorPalettePopup" style="display:none;position:absolute;top:54px;right:60px;z-index:1000;background:#fff;border:1.5px solid #00b49a;border-radius:12px;box-shadow:0 4px 16px #00b49a22;padding:16px 18px;gap:12px;flex-wrap:wrap;min-width:260px;">
           <div style="display:flex;gap:12px;flex-wrap:wrap;">
             <div class="color-choice" data-color="#e6fffb" title="민트" style="width:32px;height:32px;border-radius:50%;background:#e6fffb;border:2.5px solid #00b49a;cursor:pointer;"></div>
             <div class="color-choice" data-color="#f5edff" title="보라" style="width:32px;height:32px;border-radius:50%;background:#f5edff;border:2.5px solid #a259e4;cursor:pointer;"></div>
             <div class="color-choice" data-color="#fff4e6" title="오렌지" style="width:32px;height:32px;border-radius:50%;background:#fff4e6;border:2.5px solid #ff9800;cursor:pointer;"></div>
             <div class="color-choice" data-color="#e6f2ff" title="파랑" style="width:32px;height:32px;border-radius:50%;background:#e6f2ff;border:2.5px solid #2196f3;cursor:pointer;"></div>
+            <div class="color-choice" data-color="#ffe6f2" title="핑크" style="width:32px;height:32px;border-radius:50%;background:#ffe6f2;border:2.5px solid #ff69b4;cursor:pointer;"></div>
+            <div class="color-choice" data-color="#fffbe6" title="메모지" style="width:32px;height:32px;border-radius:50%;background:#fffbe6;border:2.5px solid #ffe066;cursor:pointer;"></div>
+            <div class="color-choice" data-color="#e6ffe6" title="형광연두" style="width:32px;height:32px;border-radius:50%;background:#e6ffe6;border:2.5px solid #00e676;cursor:pointer;"></div>
             <div class="color-choice" data-color="#fff" title="화이트" style="width:32px;height:32px;border-radius:50%;background:#fff;border:2.5px solid #bbb;cursor:pointer;"></div>
             <div class="color-choice" data-color="#222" title="다크" style="width:32px;height:32px;border-radius:50%;background:#222;border:2.5px solid #888;cursor:pointer;"></div>
           </div>
@@ -284,6 +287,9 @@
         '#f5edff': '#a259e4', // 보라
         '#fff4e6': '#ff9800', // 오렌지
         '#e6f2ff': '#2196f3', // 파랑
+        '#ffe6f2': '#ff69b4', // 핑크
+        '#fffbe6': '#ffe066', // 메모지
+        '#e6ffe6': '#00e676', // 형광연두
         '#fff': '#bbb',       // 화이트
         '#222': '#888'        // 다크
       };
@@ -293,8 +299,23 @@
         '#f5edff': '#e0cfff', // 보라 연한
         '#fff4e6': '#ffe0b2', // 오렌지 연한
         '#e6f2ff': '#b2d7ff', // 파랑 연한
+        '#ffe6f2': '#ffd1ea', // 핑크 연한
+        '#fffbe6': '#fff3b2', // 메모지 연한
+        '#e6ffe6': '#b2ffb2', // 형광연두 연한
         '#fff': '#f3f3f3',    // 화이트
         '#222': '#444'        // 다크
+      };
+      // 날짜 글씨색 팔레트별 지정
+      const dateTextMap = {
+        '#e6fffb': '#009688', // 민트
+        '#f5edff': '#7c3fa0', // 보라
+        '#fff4e6': '#e65100', // 오렌지
+        '#e6f2ff': '#1565c0', // 파랑
+        '#ffe6f2': '#d81b60', // 핑크
+        '#fffbe6': '#bfa100', // 메모지
+        '#e6ffe6': '#00a152', // 형광연두
+        '#fff': '#00b49a',    // 화이트
+        '#222': '#fff'        // 다크
       };
       function applyThemeColor(color) {
         // 메인 배경은 항상 흰색
@@ -315,7 +336,7 @@
           const date = card.querySelector('.todo-date');
           if (date) {
             date.style.background = dateBg;
-            date.style.color = (isDark || color === '#f5edff' || color === '#e6f2ff' || color === '#fff4e6') ? '#fff' : '#00b49a';
+            date.style.color = dateTextMap[color] || '#00b49a';
           }
           const source = card.querySelector('.todo-source');
           if (source) source.style.color = isDark ? '#fff' : '#00b49a';
