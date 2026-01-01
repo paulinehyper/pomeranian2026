@@ -193,6 +193,14 @@
     /* 키워드 뱃지 */
     .kw-badge { display: flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 15px; font-size: 0.85em; font-weight: 500; }
   </style>
+  <style>
+    .highlighted-title {
+      position: relative;
+      background: linear-gradient(transparent 20%, #fffde7 20%, #fbe600 90%, transparent 90%);
+      border-radius: 4px;
+      transition: background 0.2s;
+    }
+  </style>
 </head>
 <body>
   <div class="widget-home">
@@ -263,36 +271,6 @@
       <div style="display:flex;align-items:center;justify-content:center;gap:10px;width:100%;">
         <img src="assets/icon.png" alt="앱 아이콘" style="width:32px;height:32px;vertical-align:middle;border-radius:8px;box-shadow:0 1px 4px #cccccc22;">
         <span style="font-weight:800;font-size:1.15em;">Pomeranian</span>
-        <button id="colorPaletteBtn" title="테마 색상 변경" style="margin-left:12px;background:transparent;border:none;cursor:pointer;padding:0;display:flex;align-items:center;">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#292929" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10" stroke="#292929" stroke-width="2.2" fill="#e6fffb"/>
-            <circle cx="8.5" cy="10" r="1.5" fill="#ff9800"/>
-            <circle cx="15.5" cy="10" r="1.5" fill="#a259e4"/>
-            <circle cx="12" cy="15" r="1.5" fill="#2196f3"/>
-          </svg>
-        </button>
-        <div id="colorPalettePopup" style="display:none;position:absolute;top:54px;right:60px;z-index:1000;background:#fff;border:1.5px solid #292929;border-radius:12px;box-shadow:0 4px 16px #29292922;padding:16px 18px;gap:12px;flex-wrap:wrap;min-width:260px;">
-          <div style="display:flex;gap:12px;flex-wrap:wrap;">
-            <div class="color-choice" data-color="#e6fffb" title="민트" style="width:32px;height:32px;border-radius:50%;background:#e6fffb;border:2.5px solid #292929;cursor:pointer;"></div>
-            <div class="color-choice" data-color="#f5edff" title="보라" style="width:32px;height:32px;border-radius:50%;background:#f5edff;border:2.5px solid #a259e4;cursor:pointer;"></div>
-            <div class="color-choice" data-color="#fff4e6" title="오렌지" style="width:32px;height:32px;border-radius:50%;background:#fff4e6;border:2.5px solid #ff9800;cursor:pointer;"></div>
-            <div class="color-choice" data-color="#e6f2ff" title="파랑" style="width:32px;height:32px;border-radius:50%;background:#e6f2ff;border:2.5px solid #2196f3;cursor:pointer;"></div>
-            <div class="color-choice" data-color="#ffe6f2" title="핑크" style="width:32px;height:32px;border-radius:50%;background:#ffe6f2;border:2.5px solid #ff69b4;cursor:pointer;"></div>
-            <div class="color-choice" data-color="#fffbe6" data-memo="oxford" title="옥스포드 메모지" style="width:32px;height:32px;border-radius:8px 8px 16px 16px;background:#fffbe6;border:2.5px dashed #ffe066;position:relative;cursor:pointer;overflow:hidden;">
-              <svg width="32" height="8" style="position:absolute;top:0;left:0;" viewBox="0 0 32 8"><polyline points="0,8 4,2 8,8 12,2 16,8 20,2 24,8 28,2 32,8" fill="none" stroke="#ffe066" stroke-width="2"/></svg>
-              <svg width="32" height="32" style="position:absolute;top:8px;left:0;z-index:0;" viewBox="0 0 32 32">
-                <g stroke="#f3e6b3" stroke-width="1">
-                  <line x1="0" y1="12" x2="32" y2="12"/>
-                  <line x1="0" y1="18" x2="32" y2="18"/>
-                  <line x1="0" y1="24" x2="32" y2="24"/>
-                </g>
-              </svg>
-            </div>
-            <div class="color-choice" data-color="#e6ffe6" title="형광연두" style="width:32px;height:32px;border-radius:50%;background:#e6ffe6;border:2.5px solid #00e676;cursor:pointer;"></div>
-            <div class="color-choice" data-color="#fff" title="화이트" style="width:32px;height:32px;border-radius:50%;background:#fff;border:2.5px solid #bbb;cursor:pointer;"></div>
-            <div class="color-choice" data-color="#222" title="다크" style="width:32px;height:32px;border-radius:50%;background:#222;border:2.5px solid #888;cursor:pointer;"></div>
-          </div>
-        </div>
       </div>
       <button id="closeBtn" style="position:absolute;right:24px;top:50%;transform:translateY(-50%);background:transparent;border:none;font-size:1.5em;color:#888888;cursor:pointer;">&times;</button>
     </div>
@@ -324,12 +302,70 @@
       </div>
 
       <div class="widget-home-main" id="widgetHomeMain"></div>
+        <div style="position:absolute;top:84px;right:32px;z-index:20;display:flex;align-items:center;gap:8px;">
+          <button id="colorPaletteBtn" title="테마 색상 변경" style="background:transparent;border:none;cursor:pointer;padding:0;display:flex;align-items:center;">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#292929" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10" stroke="#292929" stroke-width="2.2" fill="#e6fffb"/>
+              <circle cx="8.5" cy="10" r="1.5" fill="#ff9800"/>
+              <circle cx="15.5" cy="10" r="1.5" fill="#a259e4"/>
+              <circle cx="12" cy="15" r="1.5" fill="#2196f3"/>
+            </svg>
+          </button>
+          <span id="highlighterIcon" style="display:inline-flex;align-items:center;vertical-align:middle;cursor:pointer;">
+            <svg width="22" height="22" viewBox="0 0 22 22">
+              <g>
+                <rect x="6" y="14" width="10" height="3" rx="1" fill="#ffe600" stroke="#bdb76b" stroke-width="1.2"/>
+                <polygon points="8,14 14,14 13,7 9,7" fill="#ffe600" stroke="#bdb76b" stroke-width="1.2"/>
+                <rect x="10" y="5" width="2" height="2" rx="0.7" fill="#bdb76b"/>
+              </g>
+            </svg>
+          </span>
+          <div id="colorPalettePopup" style="display:none;position:absolute;top:38px;right:0;z-index:1000;background:#fff;border:1.5px solid #292929;border-radius:12px;box-shadow:0 4px 16px #29292922;padding:16px 18px;gap:12px;flex-wrap:wrap;min-width:260px;">
+            <div style="display:flex;gap:12px;flex-wrap:wrap;">
+              <div class="color-choice" data-color="#e6fffb" title="민트" style="width:32px;height:32px;border-radius:50%;background:#e6fffb;border:2.5px solid #292929;cursor:pointer;"></div>
+              <div class="color-choice" data-color="#f5edff" title="보라" style="width:32px;height:32px;border-radius:50%;background:#f5edff;border:2.5px solid #a259e4;cursor:pointer;"></div>
+              <div class="color-choice" data-color="#fff4e6" title="오렌지" style="width:32px;height:32px;border-radius:50%;background:#fff4e6;border:2.5px solid #ff9800;cursor:pointer;"></div>
+              <div class="color-choice" data-color="#e6f2ff" title="파랑" style="width:32px;height:32px;border-radius:50%;background:#e6f2ff;border:2.5px solid #2196f3;cursor:pointer;"></div>
+              <div class="color-choice" data-color="#ffe6f2" title="핑크" style="width:32px;height:32px;border-radius:50%;background:#ffe6f2;border:2.5px solid #ff69b4;cursor:pointer;"></div>
+              <div class="color-choice" data-color="#fffbe6" data-memo="oxford" title="옥스포드 메모지" style="width:32px;height:32px;border-radius:8px 8px 16px 16px;background:#fffbe6;border:2.5px dashed #ffe066;position:relative;cursor:pointer;overflow:hidden;">
+                <svg width="32" height="8" style="position:absolute;top:0;left:0;" viewBox="0 0 32 8"><polyline points="0,8 4,2 8,8 12,2 16,8 20,2 24,8 28,2 32,8" fill="none" stroke="#ffe066" stroke-width="2"/></svg>
+                <svg width="32" height="32" style="position:absolute;top:8px;left:0;z-index:0;" viewBox="0 0 32 32">
+                  <g stroke="#f3e6b3" stroke-width="1">
+                    <line x1="0" y1="12" x2="32" y2="12"/>
+                    <line x1="0" y1="18" x2="32" y2="18"/>
+                    <line x1="0" y1="24" x2="32" y2="24"/>
+                  </g>
+                </svg>
+              </div>
+              <div class="color-choice" data-color="#e6ffe6" title="형광연두" style="width:32px;height:32px;border-radius:50%;background:#e6ffe6;border:2.5px solid #00e676;cursor:pointer;"></div>
+              <div class="color-choice" data-color="#fff" title="화이트" style="width:32px;height:32px;border-radius:50%;background:#fff;border:2.5px solid #bbb;cursor:pointer;"></div>
+              <div class="color-choice" data-color="#222" title="다크" style="width:32px;height:32px;border-radius:50%;background:#222;border:2.5px solid #888;cursor:pointer;"></div>
+            </div>
+          </div>
+        </div>
     </div>
   </div>
 
   <script>
     // 색상 팔레트 버튼 및 팝업, 테마 적용
     document.addEventListener('DOMContentLoaded', function() {
+      // 형광펜 효과 토글
+      const highlighterIcon = document.getElementById('highlighterIcon');
+      let highlightActive = false;
+      if (highlighterIcon) {
+        highlighterIcon.addEventListener('click', function() {
+          highlightActive = !highlightActive;
+          document.querySelectorAll('.todo-content').forEach(span => {
+            if (highlightActive) {
+              if (!span.classList.contains('highlighted-title')) {
+                span.classList.add('highlighted-title');
+              }
+            } else {
+              span.classList.remove('highlighted-title');
+            }
+          });
+        });
+      }
       const paletteBtn = document.getElementById('colorPaletteBtn');
       const palettePopup = document.getElementById('colorPalettePopup');
       let themeColor = localStorage.getItem('themeColor') || '#ffffff';
