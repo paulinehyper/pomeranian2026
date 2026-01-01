@@ -88,11 +88,11 @@
     .todo-card.drag-cancel .drag-trash {
       display: block;
     }
-    .todo-card.purple { background: #f5edff !important; border-left-color: #a259e4 !important; }
-    .todo-card.orange { background: #fff4e6 !important; border-left-color: #ff9800 !important; }
-    .todo-card.blue { background: #e6f2ff !important; border-left-color: #2196f3 !important; }
+    .todo-card.purple { background: #f5edff; border-left-color: #a259e4 !important; }
+    .todo-card.orange { background: #fff4e6; border-left-color: #ff9800 !important; }
+    .todo-card.blue { background: #e6f2ff; border-left-color: #2196f3 !important; }
     .todo-card:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0, 180, 154, 0.12); }
-    .todo-card.completed { border-left-color: #7be2c5 !important; background: #e6fffb !important; opacity: 0.7; }
+    .todo-card.completed { border-left-color: #7be2c5 !important; background: #e6fffb; opacity: 0.7; }
     .todo-card.completed .todo-content { text-decoration: line-through; color: #7be2c5; }
     .shake {
       animation: shake 0.5s;
@@ -220,6 +220,24 @@
       <div style="display:flex;align-items:center;justify-content:center;gap:10px;width:100%;">
         <img src="assets/icon.png" alt="앱 아이콘" style="width:32px;height:32px;vertical-align:middle;border-radius:8px;box-shadow:0 1px 4px #cccccc22;">
         <span style="font-weight:800;font-size:1.15em;">Pomeranian</span>
+        <button id="colorPaletteBtn" title="테마 색상 변경" style="margin-left:12px;background:transparent;border:none;cursor:pointer;padding:0;display:flex;align-items:center;">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#00b49a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10" stroke="#00b49a" stroke-width="2.2" fill="#e6fffb"/>
+            <circle cx="8.5" cy="10" r="1.5" fill="#ff9800"/>
+            <circle cx="15.5" cy="10" r="1.5" fill="#a259e4"/>
+            <circle cx="12" cy="15" r="1.5" fill="#2196f3"/>
+          </svg>
+        </button>
+        <div id="colorPalettePopup" style="display:none;position:absolute;top:54px;right:60px;z-index:1000;background:#fff;border:1.5px solid #00b49a;border-radius:12px;box-shadow:0 4px 16px #00b49a22;padding:16px 18px;gap:12px;flex-wrap:wrap;min-width:180px;">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;">
+            <div class="color-choice" data-color="#e6fffb" title="민트" style="width:32px;height:32px;border-radius:50%;background:#e6fffb;border:2.5px solid #00b49a;cursor:pointer;"></div>
+            <div class="color-choice" data-color="#f5edff" title="보라" style="width:32px;height:32px;border-radius:50%;background:#f5edff;border:2.5px solid #a259e4;cursor:pointer;"></div>
+            <div class="color-choice" data-color="#fff4e6" title="오렌지" style="width:32px;height:32px;border-radius:50%;background:#fff4e6;border:2.5px solid #ff9800;cursor:pointer;"></div>
+            <div class="color-choice" data-color="#e6f2ff" title="파랑" style="width:32px;height:32px;border-radius:50%;background:#e6f2ff;border:2.5px solid #2196f3;cursor:pointer;"></div>
+            <div class="color-choice" data-color="#fff" title="화이트" style="width:32px;height:32px;border-radius:50%;background:#fff;border:2.5px solid #bbb;cursor:pointer;"></div>
+            <div class="color-choice" data-color="#222" title="다크" style="width:32px;height:32px;border-radius:50%;background:#222;border:2.5px solid #888;cursor:pointer;"></div>
+          </div>
+        </div>
       </div>
       <button id="closeBtn" style="position:absolute;right:24px;top:50%;transform:translateY(-50%);background:transparent;border:none;font-size:1.5em;color:#888888;cursor:pointer;">&times;</button>
     </div>
@@ -255,6 +273,85 @@
   </div>
 
   <script>
+    // 색상 팔레트 버튼 및 팝업, 테마 적용
+    document.addEventListener('DOMContentLoaded', function() {
+      const paletteBtn = document.getElementById('colorPaletteBtn');
+      const palettePopup = document.getElementById('colorPalettePopup');
+      let themeColor = localStorage.getItem('themeColor') || '#e6fffb';
+      // 팔레트별 진한 테두리 색상 매핑
+      const borderColorMap = {
+        '#e6fffb': '#00b49a', // 민트
+        '#f5edff': '#a259e4', // 보라
+        '#fff4e6': '#ff9800', // 오렌지
+        '#e6f2ff': '#2196f3', // 파랑
+        '#fff': '#bbb',       // 화이트
+        '#222': '#888'        // 다크
+      };
+      // 날짜 배경색도 테두리색과 맞춤
+      const dateBgMap = {
+        '#e6fffb': '#b2fff3', // 민트 연한
+        '#f5edff': '#e0cfff', // 보라 연한
+        '#fff4e6': '#ffe0b2', // 오렌지 연한
+        '#e6f2ff': '#b2d7ff', // 파랑 연한
+        '#fff': '#f3f3f3',    // 화이트
+        '#222': '#444'        // 다크
+      };
+      function applyThemeColor(color) {
+        // 메인 배경은 항상 흰색
+        document.querySelector('.widget-home-main').style.background = '#fff';
+        // 할일카드 배경, 테두리, 텍스트 색상 변경
+        const borderColor = borderColorMap[color] || color;
+        const dateBg = dateBgMap[color] || color;
+        document.querySelectorAll('.todo-card').forEach(card => {
+          card.style.background = color;
+          card.style.borderLeftColor = borderColor;
+          // 카드 내 텍스트 색상
+          const isDark = color === '#222';
+          card.style.color = isDark ? '#fff' : '';
+          // 주요 텍스트(할일 내용)
+          const content = card.querySelector('.todo-content');
+          if (content) content.style.color = isDark ? '#fff' : '#333';
+          // 날짜, 소스 등 기타 텍스트
+          const date = card.querySelector('.todo-date');
+          if (date) {
+            date.style.background = dateBg;
+            date.style.color = (isDark || color === '#f5edff' || color === '#e6f2ff' || color === '#fff4e6') ? '#fff' : '#00b49a';
+          }
+          const source = card.querySelector('.todo-source');
+          if (source) source.style.color = isDark ? '#fff' : '#00b49a';
+        });
+      }
+      // 최초 적용
+      document.querySelector('.widget-home-main').style.background = '#fff';
+      // 카드가 렌더링된 후에도 적용되도록 MutationObserver 사용
+      const cardContainer = document.querySelector('.widget-home-main');
+      const observer = new MutationObserver(() => {
+        document.querySelectorAll('.todo-card').forEach(card => {
+          card.style.background = themeColor;
+        });
+      });
+      observer.observe(cardContainer, { childList: true, subtree: true });
+      // 버튼 클릭 시 팝업 토글
+      paletteBtn.onclick = (e) => {
+        e.stopPropagation();
+        palettePopup.style.display = palettePopup.style.display === 'none' ? 'block' : 'none';
+      };
+      // 팝업 외부 클릭 시 닫기
+      document.addEventListener('click', (e) => {
+        if (!palettePopup.contains(e.target) && e.target !== paletteBtn) {
+          palettePopup.style.display = 'none';
+        }
+      });
+      // 색상 선택
+      palettePopup.querySelectorAll('.color-choice').forEach(el => {
+        el.onclick = function() {
+          themeColor = this.dataset.color;
+          localStorage.setItem('themeColor', themeColor);
+          applyThemeColor(themeColor);
+          palettePopup.style.display = 'none';
+        };
+      });
+    });
     // 사이드바 토글 기능
     document.addEventListener('DOMContentLoaded', function() {
       const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
