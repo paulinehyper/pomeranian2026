@@ -163,7 +163,9 @@ try {
 ipcMain.handle('get-todo-emails', () => {
   try {
     // todo_flag IN (1,2) (미완료/완료 이메일 할일 모두)
-    return db.prepare('SELECT id, subject, body, received_at, deadline, from_addr, todo_flag, deleted_at FROM emails WHERE todo_flag IN (1,2,3) ORDER BY todo_flag ASC, received_at DESC').all();
+    const result = db.prepare('SELECT id, subject, body, received_at, deadline, from_addr, todo_flag, deleted_at, memo FROM emails WHERE todo_flag IN (1,2,3) ORDER BY todo_flag ASC, received_at DESC').all();
+    console.log('[main.js] get-todo-emails result:', result);
+    return result;
   } catch (err) { return []; }
 });
 
@@ -366,8 +368,25 @@ ipcMain.handle('delete-keyword', (event, id) => {
 
 // 메모 저장
 ipcMain.handle('save-memo', (event, id, memo) => {
-  db.prepare('UPDATE todos SET memo = ? WHERE id = ?').run(memo, id);
-  return { success: true };
+  console.log(`[IPC] save-memo handler called: id=${id}, memo=${memo}`);
+  let updated = false;
+  if (typeof id === 'string' && id.startsWith('mail-')) {
+    const emailId = id.replace('mail-', '');
+    console.log(`[save-memo] 이메일 memo 저장 시도: id=${id}, emailId=${emailId}, memo=${memo}`);
+    const result = db.prepare('UPDATE emails SET memo = ? WHERE id = ?').run(memo, emailId);
+    console.log(`[save-memo] emails 테이블 업데이트 결과:`, result);
+    updated = result.changes > 0;
+  } else {
+    // 숫자 id일 경우 emails, todos 모두 시도
+    console.log(`[save-memo] 숫자 id memo 저장 시도: id=${id}, memo=${memo}`);
+    let result = db.prepare('UPDATE emails SET memo = ? WHERE id = ?').run(memo, id);
+    console.log(`[save-memo] emails 테이블 업데이트 결과:`, result);
+    if (result.changes > 0) updated = true;
+    result = db.prepare('UPDATE todos SET memo = ? WHERE id = ?').run(memo, id);
+    console.log(`[save-memo] todos 테이블 업데이트 결과:`, result);
+    if (result.changes > 0) updated = true;
+  }
+  return { success: updated };
 });
 
 // 설정 및 기타
