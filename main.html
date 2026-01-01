@@ -1,3 +1,30 @@
+      // X 버튼 클릭 시 취소선/휴지통 표시
+      const xBtn = card.querySelector('.todo-x-btn');
+      if (xBtn) {
+        let xActive = false;
+        xBtn.onclick = function(e) {
+          e.stopPropagation();
+          if (!xActive) {
+            // 모든 카드 drag-cancel 해제
+            container.querySelectorAll('.todo-card').forEach(c => c.classList.remove('drag-cancel'));
+            card.classList.add('drag-cancel');
+            if (trashBtn) trashBtn.style.display = 'block';
+            xActive = true;
+          } else {
+            card.classList.remove('drag-cancel');
+            if (trashBtn) trashBtn.style.display = '';
+            xActive = false;
+          }
+        };
+        // 카드 외부 클릭 시 효과 해제
+        document.addEventListener('click', function outside(ev) {
+          if (xActive && !card.contains(ev.target) && ev.target !== xBtn && ev.target !== trashBtn) {
+            card.classList.remove('drag-cancel');
+            if (trashBtn) trashBtn.style.display = '';
+            xActive = false;
+          }
+        }, true);
+      }
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -639,6 +666,7 @@
       
       return `
         <div class="todo-card ${isDone ? 'completed' : ''}" data-id="${taskId}" data-is-email="${isEmail}" draggable="true"${urgencyRating !== null ? ` data-urgency-rating="${urgencyRating}"` : ''}>
+          <button class="todo-x-btn" title="삭제" style="position:absolute;top:8px;right:10px;background:none;border:none;font-size:20px;line-height:1;color:#888;cursor:pointer;z-index:2;">×</button>
           <div class="todo-top">
             <div class="todo-content-wrapper">
               ${isEmail ? `<span class="todo-source">보낸이: ${item.from_addr || '알 수 없음'}</span>` : ''}
@@ -675,6 +703,21 @@
           // 드래그 취소선/휴지통 표시용
           const trashBtn = card.querySelector('.drag-trash');
           // 이메일이 아니어도 항상 drag-trash, drag-cancel 동작 적용
+          // X 버튼 클릭 시 취소선/휴지통 토글
+          const xBtn = card.querySelector('.todo-x-btn');
+          if (xBtn) {
+            xBtn.onclick = function(e) {
+              e.stopPropagation();
+              // 토글 방식: 이미 취소선/휴지통이 있으면 해제, 없으면 표시
+              if (card.classList.contains('drag-cancel')) {
+                card.classList.remove('drag-cancel');
+                if (trashBtn) trashBtn.style.display = '';
+              } else {
+                card.classList.add('drag-cancel');
+                if (trashBtn) trashBtn.style.display = 'block';
+              }
+            };
+          }
                         // 이메일 본문보기 링크 클릭 이벤트
                         const viewBodyLink = card.querySelector('.view-body-link');
                         if (viewBodyLink && card.getAttribute('data-is-email') === 'true') {

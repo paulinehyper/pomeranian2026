@@ -1,59 +1,51 @@
 /**
  * 1. 상태 관리 변수
  */
-let isRefreshing = false; // 중복 실행 방지
-
-/**
- * 2. 데이터 가져오기 함수
- */
-async function fetchTodos() {
-    return await window.electronAPI.getTodos();
-}
-
-async function fetchCompletedTodos() {
-    const todos = await window.electronAPI.getTodos();
-    return Array.isArray(todos) ? todos.filter(todo => todo.todo_flag === 2) : [];
-}
-
-/**
- * 3. 렌더링 함수 (renderList)
- */
-function renderList(todos) {
-    const list = document.querySelector('.schedule-list');
-    if (!list) return;
-
-    // 헤더 뱃지 갱신
-    const badge = document.getElementById('todo-count-badge');
-    if (badge) {
-        const notCompleted = Array.isArray(todos) ? todos.filter(t => t.todo_flag !== 2) : [];
-        badge.textContent = notCompleted.length;
+    // --- 휴지통 DOM과 이벤트는 최초 1회만 생성/바인딩 ---
+    let trash = document.getElementById('todo-trash-bin');
+    if (!trash) {
+        trash = document.createElement('div');
+        trash.id = 'todo-trash-bin';
+        trash.innerHTML = '<svg width="48" height="48" viewBox="0 0 24 24" fill="none"><rect x="4" y="7" width="16" height="13" rx="3" fill="#eee" stroke="#888" stroke-width="1.5"/><rect x="9" y="3" width="6" height="4" rx="2" fill="#888"/><path d="M10 11v4" stroke="#888" stroke-width="2"/><path d="M14 11v4" stroke="#888" stroke-width="2"/></svg><div style="color:#888;text-align:center;">여기로 드래그해 삭제</div>';
+        trash.style.position = 'fixed';
+        trash.style.right = '40px';
+        trash.style.bottom = '40px';
+        trash.style.zIndex = 9999;
+        trash.style.background = '#fff';
+        trash.style.border = '2px solid #888';
+        trash.style.borderRadius = '16px';
+        trash.style.padding = '18px 24px 8px 24px';
+        trash.style.boxShadow = '0 4px 16px #0002';
+        trash.style.display = 'none';
+        document.body.appendChild(trash);
+        // 이벤트 리스너 최초 1회만 바인딩
+        trash.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            trash.style.background = '#ffe0e0';
+        });
+        trash.addEventListener('dragleave', (e) => {
+            trash.style.background = '#fff';
+        });
+        trash.addEventListener('drop', async (e) => {
+            trash.style.background = '#fff';
+            // 삭제 처리: 드래그 중인 카드 찾기
+            const dragging = document.querySelector('li.dragging');
+            if (dragging) {
+                const id = dragging.getAttribute('data-id');
+                if (id && id.startsWith('mail-')) {
+                    await window.electronAPI.setEmailTodoFlag(id.replace('mail-', ''), 0);
+                } else if (id) {
+                    await window.electronAPI.excludeTodo(id);
+                }
+                refreshDisplay();
+            }
+        });
     }
-
-    const filteredTodos = Array.isArray(todos) ? todos.filter(t => t.todo_flag !== 2) : [];
-    list.innerHTML = '';
-
-    if (filteredTodos.length === 0) {
-        list.innerHTML = '<li style="color:#888; text-align:center; padding: 20px;">할일이 없습니다.</li>';
-        return;
-    }
-
-    // 정렬 로직 (이메일 우선 -> 일반 데드라인 순)
-    const sortedTodos = [...filteredTodos].sort((a, b) => {
-        const isMailA = typeof a.id === 'string' && a.id.startsWith('mail-');
-        const isMailB = typeof b.id === 'string' && b.id.startsWith('mail-');
-        if (isMailA && isMailB) return new Date(b.received_at || 0) - new Date(a.received_at || 0);
-        if (!isMailA && !isMailB) {
-            if (!a.deadline || a.deadline === '없음') return 1;
-            if (!b.deadline || b.deadline === '없음') return -1;
-            return new Date(a.deadline) - new Date(b.deadline);
-        }
-        return isMailA ? -1 : 1;
-    });
 
     sortedTodos.forEach((item) => {
         const li = document.createElement('li');
         li.setAttribute('draggable', 'true');
-        
+        li.setAttribute('data-id', item.id);
         const memo = item.memo || '';
         let isUrgent = false;
         let deadlineHtml = '';
@@ -71,6 +63,7 @@ function renderList(todos) {
 
         const isCompleted = item.todo_flag === 2;
         li.innerHTML = `
+            <button class="todo-x-btn" title="삭제" style="position:absolute;top:6px;right:8px;background:none;border:none;font-size:18px;line-height:1;color:#888;cursor:pointer;z-index:2;">×</button>
             ${deadlineHtml}
             <span class="date">${item.date || ''} </span>
             <span class="d-day">${item.dday || ''}</span>
@@ -87,6 +80,79 @@ function renderList(todos) {
             </button>
         `;
 
+        // X 버튼 클릭 시 취소선/휴지통 표시
+        const xBtn = li.querySelector('.todo-x-btn');
+        xBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            // 모든 카드의 취소선 스타일 복구
+            document.querySelectorAll('li .task').forEach(taskEl => {
+                taskEl.style.textDecoration = '';
+                taskEl.style.color = '';
+            });
+            li.classList.add('dragging');
+            const taskSpan = li.querySelector('.task');
+            if (taskSpan) {
+                taskSpan.style.textDecoration = 'line-through';
+                taskSpan.style.color = '#aaa';
+            }
+            // 휴지통 표시
+            let trash = document.getElementById('todo-trash-bin');
+            if (trash) trash.style.display = 'block';
+
+            // 휴지통을 클릭해야 실제 삭제, X버튼 다시 누르면 취소선/휴지통 해제
+            function cancelXEffect() {
+                li.classList.remove('dragging');
+                if (taskSpan) {
+                    taskSpan.style.textDecoration = '';
+                    taskSpan.style.color = '';
+                }
+                if (trash) trash.style.display = 'none';
+                document.removeEventListener('click', outsideClickHandler, true);
+            }
+            // 카드 외부 클릭 시 효과 해제
+            function outsideClickHandler(ev) {
+                if (!li.contains(ev.target) && ev.target !== trash) {
+                    cancelXEffect();
+                }
+            }
+            document.addEventListener('click', outsideClickHandler, true);
+
+            // X버튼 다시 누르면 해제
+            xBtn.onclick = (ev) => {
+                ev.stopPropagation();
+                cancelXEffect();
+            };
+        });
+
+        // --- 드래그 앤 드롭 이벤트 바인딩 ---
+        li.addEventListener('dragstart', (e) => {
+            // 모든 카드의 취소선 스타일을 먼저 복구(혹시 남아있을 수 있으므로)
+            document.querySelectorAll('li .task').forEach(taskEl => {
+                taskEl.style.textDecoration = '';
+                taskEl.style.color = '';
+            });
+            li.classList.add('dragging');
+            const taskSpan = li.querySelector('.task');
+            if (taskSpan) {
+                taskSpan.style.textDecoration = 'line-through';
+                taskSpan.style.color = '#aaa';
+            }
+            trash.style.display = 'block';
+        });
+        li.addEventListener('dragend', (e) => {
+            li.classList.remove('dragging');
+            // dragend 시 모든 카드의 취소선 스타일을 복구
+            document.querySelectorAll('li .task').forEach(taskEl => {
+                // 완료된 카드가 아니면 복구
+                const parentLi = taskEl.closest('li');
+                if (parentLi && !parentLi.classList.contains('completed')) {
+                    taskEl.style.textDecoration = '';
+                    taskEl.style.color = '';
+                }
+            });
+            trash.style.display = 'none';
+        });
+
         // --- 내부 이벤트 바인딩 ---
         // 마감일 저장
         const saveDlBtn = li.querySelector('.set-deadline-btn');
@@ -100,6 +166,55 @@ function renderList(todos) {
                 } else {
                     await window.electronAPI.setTodoDeadline(item.id, dateVal);
                 }
+                refreshDisplay();
+            };
+        }
+
+        // 완료 토글 (글자 클릭)
+        li.querySelector('.task').onclick = async () => {
+            const currentFlag = item.todo_flag === 2 ? 1 : 2;
+            if (typeof item.id === 'string' && item.id.startsWith('mail-')) {
+                await window.electronAPI.setEmailTodoFlag(item.id.replace('mail-', ''), currentFlag);
+            } else {
+                await window.electronAPI.setTodoComplete(item.id, currentFlag);
+            }
+            refreshDisplay();
+        };
+
+        // 메모 필드 토글 및 자동 저장
+        const memoArea = li.querySelector('.memo');
+        li.querySelector('.memo-edit-btn').onclick = (e) => {
+            e.stopPropagation();
+            memoArea.style.display = memoArea.style.display === 'none' ? 'block' : 'none';
+        };
+        memoArea.oninput = (e) => window.electronAPI.saveMemo(item.id, e.target.value);
+
+        // 제외 버튼
+        li.querySelector('.exclude-btn').onclick = async (e) => {
+            e.stopPropagation();
+            if (confirm('할일 목록에서 제외하시겠습니까?')) {
+                if (typeof item.id === 'string' && item.id.startsWith('mail-')) {
+                    // 제목에서 단어 분리 후 sentence 타입 keyword로 저장
+                    const subject = item.task || '';
+                    // 한글, 영문, 숫자 단어 추출 (1글자 이상)
+                    const words = (subject.match(/[\p{L}\p{N}]+/gu) || []).map(w => w.trim()).filter(w => w.length > 0);
+                    const uniqueWords = [...new Set(words)];
+                    for (const word of uniqueWords) {
+                        if (word.length > 0) {
+                            await window.electronAPI.insertKeyword(word, 'sentence');
+                        }
+                    }
+                    await window.electronAPI.setEmailTodoFlag(item.id.replace('mail-', ''), 0);
+                } else {
+                    await window.electronAPI.excludeTodo(item.id);
+                }
+                refreshDisplay();
+            }
+        };
+
+        if (isUrgent) li.classList.add('urgent-blink');
+        list.appendChild(li);
+    });
                 refreshDisplay();
             };
         }
