@@ -235,7 +235,16 @@
             <div class="color-choice" data-color="#fff4e6" title="오렌지" style="width:32px;height:32px;border-radius:50%;background:#fff4e6;border:2.5px solid #ff9800;cursor:pointer;"></div>
             <div class="color-choice" data-color="#e6f2ff" title="파랑" style="width:32px;height:32px;border-radius:50%;background:#e6f2ff;border:2.5px solid #2196f3;cursor:pointer;"></div>
             <div class="color-choice" data-color="#ffe6f2" title="핑크" style="width:32px;height:32px;border-radius:50%;background:#ffe6f2;border:2.5px solid #ff69b4;cursor:pointer;"></div>
-            <div class="color-choice" data-color="#fffbe6" title="메모지" style="width:32px;height:32px;border-radius:50%;background:#fffbe6;border:2.5px solid #ffe066;cursor:pointer;"></div>
+            <div class="color-choice" data-color="#fffbe6" data-memo="oxford" title="옥스포드 메모지" style="width:32px;height:32px;border-radius:8px 8px 16px 16px;background:#fffbe6;border:2.5px dashed #ffe066;position:relative;cursor:pointer;overflow:hidden;">
+              <svg width="32" height="8" style="position:absolute;top:0;left:0;" viewBox="0 0 32 8"><polyline points="0,8 4,2 8,8 12,2 16,8 20,2 24,8 28,2 32,8" fill="none" stroke="#ffe066" stroke-width="2"/></svg>
+              <svg width="32" height="32" style="position:absolute;top:8px;left:0;z-index:0;" viewBox="0 0 32 32">
+                <g stroke="#f3e6b3" stroke-width="1">
+                  <line x1="0" y1="12" x2="32" y2="12"/>
+                  <line x1="0" y1="18" x2="32" y2="18"/>
+                  <line x1="0" y1="24" x2="32" y2="24"/>
+                </g>
+              </svg>
+            </div>
             <div class="color-choice" data-color="#e6ffe6" title="형광연두" style="width:32px;height:32px;border-radius:50%;background:#e6ffe6;border:2.5px solid #00e676;cursor:pointer;"></div>
             <div class="color-choice" data-color="#fff" title="화이트" style="width:32px;height:32px;border-radius:50%;background:#fff;border:2.5px solid #bbb;cursor:pointer;"></div>
             <div class="color-choice" data-color="#222" title="다크" style="width:32px;height:32px;border-radius:50%;background:#222;border:2.5px solid #888;cursor:pointer;"></div>
@@ -291,7 +300,8 @@
         '#fffbe6': '#ffe066', // 메모지
         '#e6ffe6': '#00e676', // 형광연두
         '#fff': '#bbb',       // 화이트
-        '#222': '#888'        // 다크
+        '#222': '#888',       // 다크
+        '#fffbe6': '#ffe066'  // 옥스포드 메모지
       };
       // 날짜 배경색도 테두리색과 맞춤
       const dateBgMap = {
@@ -303,7 +313,8 @@
         '#fffbe6': '#fff3b2', // 메모지 연한
         '#e6ffe6': '#b2ffb2', // 형광연두 연한
         '#fff': '#f3f3f3',    // 화이트
-        '#222': '#444'        // 다크
+        '#222': '#444',       // 다크
+        '#fffbe6': '#fff3b2'  // 옥스포드 메모지
       };
       // 날짜 글씨색 팔레트별 지정
       const dateTextMap = {
@@ -315,7 +326,8 @@
         '#fffbe6': '#bfa100', // 메모지
         '#e6ffe6': '#00a152', // 형광연두
         '#fff': '#00b49a',    // 화이트
-        '#222': '#fff'        // 다크
+        '#222': '#fff',       // 다크
+        '#fffbe6': '#bfa100'  // 옥스포드 메모지
       };
       function applyThemeColor(color) {
         // 메인 배경은 항상 흰색
@@ -324,8 +336,48 @@
         const borderColor = borderColorMap[color] || color;
         const dateBg = dateBgMap[color] || color;
         document.querySelectorAll('.todo-card').forEach(card => {
-          card.style.background = color;
-          card.style.borderLeftColor = borderColor;
+          // 옥스포드 메모지 효과
+          if (color === '#fffbe6') {
+            card.style.background = '#fffbe6';
+            card.style.borderLeftColor = '#ffe066';
+            card.style.borderLeftStyle = 'dashed';
+            card.style.borderLeftWidth = '5px';
+            card.style.borderTopLeftRadius = '8px';
+            card.style.borderTopRightRadius = '8px';
+            card.style.position = 'relative';
+            // 상단 찢어진 효과 제거 (더 이상 추가하지 않음)
+            // 노트패드 줄무늬 배경 추가(중복 방지)
+            if (!card.querySelector('.oxford-lines')) {
+              const lines = document.createElement('div');
+              lines.className = 'oxford-lines';
+              lines.style.position = 'absolute';
+              lines.style.top = '10px';
+              lines.style.left = '0';
+              lines.style.width = '100%';
+              lines.style.height = 'calc(100% - 10px)';
+              lines.style.zIndex = '1';
+              lines.style.pointerEvents = 'none';
+              lines.innerHTML = '<svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none"><g stroke="#f3e6b3" stroke-width="1">'+
+                '<line x1="0" y1="22" x2="100" y2="22"/>'+
+                '<line x1="0" y1="38" x2="100" y2="38"/>'+
+                '<line x1="0" y1="54" x2="100" y2="54"/>'+
+                '<line x1="0" y1="70" x2="100" y2="70"/>'+
+                '<line x1="0" y1="86" x2="100" y2="86"/>'+
+              '</g></svg>';
+              card.appendChild(lines);
+            }
+          } else {
+            card.style.background = color;
+            card.style.borderLeftColor = borderColor;
+            card.style.borderLeftStyle = '';
+            card.style.borderTopLeftRadius = '';
+            card.style.borderTopRightRadius = '';
+            // 효과 제거
+            const tear = card.querySelector('.oxford-tear');
+            if (tear) tear.remove();
+            const lines = card.querySelector('.oxford-lines');
+            if (lines) lines.remove();
+          }
           // 카드 내 텍스트 색상
           const isDark = color === '#222';
           card.style.color = isDark ? '#fff' : '';
@@ -619,9 +671,10 @@
     // 카드 이벤트 바인딩 및 드래그앤드롭
     function bindCardEvents(container) {
       let dragSrc = null;
-      container.querySelectorAll('.todo-card').forEach(card => {
+        container.querySelectorAll('.todo-card').forEach(card => {
           // 드래그 취소선/휴지통 표시용
           const trashBtn = card.querySelector('.drag-trash');
+          // 이메일이 아니어도 항상 drag-trash, drag-cancel 동작 적용
                         // 이메일 본문보기 링크 클릭 이벤트
                         const viewBodyLink = card.querySelector('.view-body-link');
                         if (viewBodyLink && card.getAttribute('data-is-email') === 'true') {
@@ -890,7 +943,7 @@
         card.addEventListener('dragstart', function(e) {
           dragSrc = card;
           card.classList.add('dragging');
-          // 드래그한 카드에만 취소선/휴지통 표시 토글
+          // 드래그할 때마다 취소선/휴지통 토글
           if (card.classList.contains('drag-cancel')) {
             card.classList.remove('drag-cancel');
             if (trashBtn) trashBtn.style.display = '';
@@ -903,7 +956,6 @@
         card.addEventListener('dragend', function() {
           card.classList.remove('dragging');
           // 드래그가 끝나면 해당 카드에만 취소선/휴지통이 남도록(유지)
-          // 아무 동작도 하지 않음(해제하지 않음)
           dragSrc = null;
         });
                 // 드래그 중 휴지통 클릭 시 삭제
@@ -1007,6 +1059,11 @@ async function refreshAll() {
   }
   bindCardEvents(userContainer);
   bindCardEvents(emailContainer);
+  // 카드 렌더 후 테마색 즉시 적용
+  if (window.applyThemeColor) {
+    const themeColor = localStorage.getItem('themeColor') || '#e6fffb';
+    window.applyThemeColor(themeColor);
+  }
 }
 
     // 1. 메인 페이지
