@@ -1365,12 +1365,16 @@ async function renderKeywordPage() {
     // 3. 휴지통
     async function renderTrashPage() {
       widgetMain.innerHTML = `
-        <div style="display:flex;align-items:center;justify-content:space-between;">
-          <h2 style="color:#292929;margin-bottom:10px;font-size:1em;">휴지통</h2>
-          <button id="emptyTrashBtn" style="background:#ff335e;color:#fff;border:none;padding:7px 18px;border-radius:7px;font-size:0.98em;font-weight:bold;cursor:pointer;">휴지통 비우기</button>
-        </div>
-        <p style="color:#292929; margin:0 0 12px 0; font-size:0.8em; font-weight:300;">완료한 할일들</p>
-        <div id="trash-list"></div>
+        <div style="padding-top:0px;">
+          <div style="display:flex;align-items:center;justify-content:flex-start;margin-bottom:20px;">
+            <h2 style="color:#292929;margin-bottom:0px;font-size:1em;">휴지통</h2>
+            <button id="emptyTrashBtn" style="background:#fff;color:#292929;border:1.3px solid #bbb;padding:0px 10px;border-radius:7px;font-size:0.7em;font-weight:bold;cursor:pointer;box-shadow:0 2px 8px #bbb2;margin-left:10px;">휴지통 비우기</button>
+          </div>
+           
+        
+          <p style="color:#292929; margin:0 0 12px 0; font-size:0.8em; font-weight:300;">완료한 할일들</p>
+          <div id="trash-list"></div>
+         </div>
       `;
  
       const todos = await window.electronAPI.getTodos('trash');
