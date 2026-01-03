@@ -193,7 +193,8 @@ ipcMain.handle('get-todos', (event, mode) => {
       deadline: t.deadline || '없음',
       date: t.date,
       dday: t.dday,
-      todo_flag: t.todo_flag
+      todo_flag: t.todo_flag,
+      deleted_at: t.deleted_at || ''
     }));
   } catch (err) { return []; }
 });
@@ -263,7 +264,14 @@ ipcMain.handle('set-todo-deadline', (event, id, deadline) => {
 
 // 완료/복구 토글
 ipcMain.handle('set-todo-complete', (event, id, flag) => {
-  db.prepare('UPDATE todos SET todo_flag = ? WHERE id = ?').run(flag, id);
+  if (flag === 3) {
+    // 삭제(휴지통 이동) 시 삭제 시각 기록
+    const now = new Date().toISOString().replace('T', ' ').substring(0, 19);
+    db.prepare('UPDATE todos SET todo_flag = ?, deleted_at = ? WHERE id = ?').run(flag, now, id);
+  } else {
+    // 복구/완료 등은 deleted_at을 null로
+    db.prepare('UPDATE todos SET todo_flag = ?, deleted_at = NULL WHERE id = ?').run(flag, id);
+  }
   notifyRefresh();
   return { success: true };
 });
@@ -521,6 +529,10 @@ async function syncMail() {
  * 5. 앱 실행 (Life-cycle)
  */
 app.whenReady().then(() => {
+  // macOS에서 Dock 아이콘을 icon.png로 지정
+  if (process.platform === 'darwin') {
+    app.dock.setIcon(path.join(__dirname, 'assets', 'icon.png'));
+  }
   createWindow(); // 창 생성
   setupMailIpc(mainWindow); // 메일 핸들러 연결
 
