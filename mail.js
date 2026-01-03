@@ -120,6 +120,15 @@ async function syncMail(info) {
               } else {
                 body = rawBody.toString();
               }
+              // 사람이 해석 불가능한 MIME boundary, Content-Type, boundary marker 등 제거
+              if (typeof body === 'string') {
+                body = body.replace(/--[0-9a-fA-F]{16,}--/g, '')
+                           .replace(/Content-Type:.*?charset="?UTF-8"?.*?\n/gi, '')
+                           .replace(/Content-Transfer-Encoding:.*?\n/gi, '')
+                           .replace(/--[0-9a-fA-F]{16,}/g, '')
+                           .replace(/=\d{2}/g, '')
+                           .replace(/\n{2,}/g, '\n');
+              }
             } catch (e) {
               body = rawBody.toString();
             }
