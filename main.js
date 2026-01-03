@@ -162,8 +162,8 @@ try {
 // main.js 내 해당 부분
 ipcMain.handle('get-todo-emails', () => {
   try {
-    // todo_flag IN (1,2) (미완료/완료 이메일 할일 모두)
-    const result = db.prepare('SELECT id, subject, body, received_at, deadline, from_addr, todo_flag, deleted_at, memo FROM emails WHERE todo_flag IN (1,2,3) ORDER BY todo_flag ASC, received_at DESC').all();
+    // todo_flag IN (1,2) (미완료/완료 이메일 할일만, 휴지통 제외)
+    const result = db.prepare('SELECT id, subject, body, received_at, deadline, from_addr, todo_flag, deleted_at, memo FROM emails WHERE todo_flag IN (1,2) ORDER BY todo_flag ASC, received_at DESC').all();
     console.log('[main.js] get-todo-emails result:', result);
     return result;
   } catch (err) { return []; }
@@ -172,7 +172,13 @@ ipcMain.handle('get-todo-emails', () => {
 // 이메일 상태(완료/휴지통) 변경 핸들러
 ipcMain.handle('set-mail-complete', (event, id, flag) => {
   try {
-    db.prepare('UPDATE emails SET todo_flag = ? WHERE id = ?').run(flag, id);
+    if (flag === 3) {
+      // 삭제(휴지통 이동) 시 삭제 시각 기록
+      const now = new Date().toISOString().replace('T', ' ').substring(0, 19);
+      db.prepare('UPDATE emails SET todo_flag = ?, deleted_at = ? WHERE id = ?').run(flag, now, id);
+    } else {
+      db.prepare('UPDATE emails SET todo_flag = ?, deleted_at = NULL WHERE id = ?').run(flag, id);
+    }
     return { success: true };
   } catch (err) {
     return { success: false };
@@ -195,6 +201,21 @@ ipcMain.handle('get-todos', (event, mode) => {
       dday: t.dday,
       todo_flag: t.todo_flag,
       deleted_at: t.deleted_at || ''
+    }));
+  } catch (err) { return []; }
+});
+
+// 휴지통 이메일 목록 가져오기
+ipcMain.handle('get-trash-emails', (event) => {
+  try {
+    const emails = db.prepare('SELECT * FROM emails WHERE todo_flag = 3 ORDER BY id DESC').all();
+    return emails.map(e => ({
+      id: e.id,
+      subject: e.subject || '제목 없음',
+      from_addr: e.from_addr || '',
+      received_at: e.received_at || '',
+      todo_flag: e.todo_flag,
+      deleted_at: e.deleted_at || ''
     }));
   } catch (err) { return []; }
 });

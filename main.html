@@ -718,7 +718,8 @@
         }
       }
       const isDone = Number(item.todo_flag) === 2;
-      const taskId = isEmail ? `mail-${item.id}` : item.id;
+      //const taskId = isEmail ? `mail-${item.id}` : item.id;
+      const taskId = item.id;
       const title = isEmail ? (item.subject || '(제목 없음)') : (item.task || item.content);
       
       return `
@@ -999,6 +1000,7 @@
         if (delBtn) {
           delBtn.onclick = async (e) => {
             e.stopPropagation();
+            console.log('휴지통 클릭', id, isEmail);
             if (isEmail) await window.electronAPI.setMailComplete(id, 3);
             else await window.electronAPI.setTodoComplete(id, 3);
             refreshAll();
@@ -1070,6 +1072,7 @@
                     e.stopPropagation();
                     const isEmail = card.getAttribute('data-is-email') === 'true';
                     const id = Number(card.getAttribute('data-id'));
+                    console.log('휴지통 클릭', id, isEmail);
                     if (isEmail) await window.electronAPI.setMailComplete(id, 3);
                     else await window.electronAPI.setTodoComplete(id, 3);
                     refreshAll();
@@ -1384,17 +1387,36 @@ async function renderKeywordPage() {
          </div>
       `;
  
+
       const todos = await window.electronAPI.getTodos('trash');
+      const emailTodos = await window.electronAPI.getTrashEmails();
       const list = document.getElementById('trash-list');
-      list.innerHTML = todos.length ? todos.map(t => `
-        <div class="todo-card" style="opacity:0.6; display:flex; flex-direction:row; align-items:center;">
-          <span style="font-size:0.85em; color:#b85c5c; min-width:120px; font-weight:600; margin-right:12px;">[삭제: ${t.deleted_at ? t.deleted_at : '-'}]</span>
-          <span>${t.task}</span>
-          <button class="action-btn restore-btn" data-id="${t.id}" style="border-color:#888888; color:#888888; margin-left:auto;">복구</button>
-        </div>`).join('') : '<p style="text-align:center;color:#aaa;padding:20px;">휴지통이 비었습니다.</p>';
-      
+      let html = '';
+      if (todos.length) {
+        html += todos.map(t => `
+          <div class="todo-card" style="opacity:0.6; display:flex; flex-direction:row; align-items:center;">
+            <span style="font-size:0.85em; color:#b85c5c; min-width:120px; font-weight:600; margin-right:12px;">[삭제: ${t.deleted_at ? t.deleted_at : '-'}]</span>
+            <span>${t.task}</span>
+            <button class="action-btn restore-btn" data-id="${t.id}" style="border-color:#888888; color:#888888; margin-left:auto;">복구</button>
+          </div>`).join('');
+      }
+      if (emailTodos.length) {
+        html += emailTodos.map(e => `
+          <div class="todo-card" style="opacity:0.6; display:flex; flex-direction:row; align-items:center; background:#fff5f5;">
+            <span style="font-size:0.85em; color:#b85c5c; min-width:120px; font-weight:600; margin-right:12px;">[삭제: -]</span>
+            <span>[이메일] ${e.subject}</span>
+            <button class="action-btn restore-email-btn" data-id="${e.id}" style="border-color:#888888; color:#888888; margin-left:auto;">복구</button>
+          </div>`).join('');
+      }
+      if (!html) html = '<p style="text-align:center;color:#aaa;padding:20px;">휴지통이 비었습니다.</p>';
+      list.innerHTML = html;
+
       list.querySelectorAll('.restore-btn').forEach(b => b.onclick = async () => {
         await window.electronAPI.setTodoComplete(Number(b.dataset.id), 1);
+        renderTrashPage();
+      });
+      list.querySelectorAll('.restore-email-btn').forEach(b => b.onclick = async () => {
+        await window.electronAPI.setMailComplete(Number(b.dataset.id), 1);
         renderTrashPage();
       });
 

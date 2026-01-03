@@ -52,5 +52,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     },
 
     // --- (F) 휴지통 비우기 ---
-    deleteTrashTodos: () => ipcRenderer.invoke('delete-trash-todos')
+    deleteTrashTodos: () => ipcRenderer.invoke('delete-trash-todos'),
+
+    // 휴지통 이메일 목록
+    getTrashEmails: () => ipcRenderer.invoke('get-trash-emails')
 });
