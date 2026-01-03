@@ -3,7 +3,7 @@
 
 const { app, BrowserWindow, ipcMain, Tray, Menu, dialog } = require('electron');
 const path = require('path');
-const setupMailIpc = require('./mail'); // mail.js 모듈 로드
+const mailModule = require('./mail'); // mail.js 모듈 로드
 const db = require('./db');
 function notifyRefresh() {
   if (mainWindow) mainWindow.webContents.send('refresh');
@@ -24,15 +24,15 @@ function autoClassifyEmailTodo(subject, body) {
   }
   const subjectText = (subject || '').toLowerCase();
   const bodyText = (body || '').toLowerCase();
-  console.log('[키워드 매칭] subject:', subjectText, '| body:', bodyText);
-  console.log('[키워드 매칭] excludeKeywords:', excludeKeywords);
+  //console.log('[키워드 매칭] subject:', subjectText, '| body:', bodyText);
+  //console.log('[키워드 매칭] excludeKeywords:', excludeKeywords);
   for (const k of excludeKeywords) {
     if (!k) continue;
     const kw = k.toLowerCase();
     // 한글 키워드 부분일치(자모 결합 포함) 정규식 매칭
     const regex = new RegExp(kw + "[\u3131-\u3163\uac00-\ud7a3]*", "g");
     if (subjectText.match(regex) || bodyText.match(regex)) {
-      console.log(`[키워드 매칭] EXCLUDE 매칭(확장): '${kw}'`);
+     //console.log(`[키워드 매칭] EXCLUDE 매칭(확장): '${kw}'`);
       return 9; // 무조건 제외
     }
   }
@@ -43,17 +43,17 @@ function autoClassifyEmailTodo(subject, body) {
     // 한글 키워드 부분일치(자모 결합 포함) 정규식 매칭
     const regex = new RegExp(kw + "[\u3131-\u3163\uac00-\ud7a3]*", "g");
     if (subjectText.match(regex) || bodyText.match(regex)) {
-      console.log(`[키워드 매칭] INCLUDE 매칭(확장): '${kw}'`);
+      //console.log(`[키워드 매칭] INCLUDE 매칭(확장): '${kw}'`);
       return 1; // 할일로 분류
     }
   }
   // '12/29까지', '12.29까지', '12-29까지' 등 패턴
   const deadlinePattern = /(\d{1,2})[\/.\-](\d{1,2})\s*까지/;
   if (deadlinePattern.test(subject) || deadlinePattern.test(body)) {
-    console.log('[키워드 매칭] 마감일 패턴 매칭');
+  //  console.log('[키워드 매칭] 마감일 패턴 매칭');
     return 1; // 할일로 분류
   }
-  console.log('[키워드 매칭] 매칭 없음, 일반 메일');
+ // console.log('[키워드 매칭] 매칭 없음, 일반 메일');
   return 0;
 }
 
@@ -164,7 +164,7 @@ ipcMain.handle('get-todo-emails', () => {
   try {
     // todo_flag IN (1,2) (미완료/완료 이메일 할일만, 휴지통 제외)
     const result = db.prepare('SELECT id, subject, body, received_at, deadline, from_addr, todo_flag, deleted_at, memo FROM emails WHERE todo_flag IN (1,2) ORDER BY todo_flag ASC, received_at DESC').all();
-    console.log('[main.js] get-todo-emails result:', result);
+   // console.log('[main.js] get-todo-emails result:', result);
     return result;
   } catch (err) { return []; }
 });
@@ -313,10 +313,12 @@ ipcMain.handle('exclude-todo', (event, id, isEmail) => { // id와 isEmail 두 �
           const words = (titleToExclude.match(/[\p{L}\p{N}]{2,}/gu) || [])
             .map(w => w.trim())
             .filter(w => w.length >= 2);
-          const uniqueWords = [...new Set(words)];
-          for (const word of uniqueWords) {
-            db.prepare('INSERT OR IGNORE INTO keywords (word, type) VALUES (?, ?)').run(word, 'exclude');
-          }
+            const uniqueWords = [...new Set(words)]
+              // 명사형만 남기고 동사형(어미가 '다', '자', '합시다', '해요', '합니다' 등) 제외
+              .filter(w => !/다$|자$|합시다$|해요$|합니다$|하세요$|하자$|해봅시다$|해보자$/.test(w));
+            for (const word of uniqueWords) {
+              db.prepare('INSERT OR IGNORE INTO keywords (word, type) VALUES (?, ?)').run(word, 'exclude');
+            }
         }
       }
     } else {
@@ -397,7 +399,7 @@ ipcMain.handle('delete-keyword', (event, id) => {
 
 // 메모 저장
 ipcMain.handle('save-memo', (event, id, memo) => {
-  console.log(`[IPC] save-memo handler called: id=${id}, memo=${memo}`);
+  //console.log(`[IPC] save-memo handler called: id=${id}, memo=${memo}`);
   let updated = false;
   if (typeof id === 'string' && id.startsWith('mail-')) {
     const emailId = id.replace('mail-', '');
@@ -550,12 +552,29 @@ async function syncMail() {
  * 5. 앱 실행 (Life-cycle)
  */
 app.whenReady().then(() => {
+  // IMAP IDLE 실시간 메일 동기화 활성화
+  try {
+    console.log('[DIAG] IMAP IDLE 초기화 진입');
+    const row = db.prepare('SELECT * FROM mail_settings WHERE id=1').get();
+    console.log('[DIAG] mail_settings row:', row);
+    if (row && row.mail_id && row.mail_pw) {
+      console.log('[DIAG] IMAP IDLE 연결 시도');
+      mailModule.startImapIdleListener(row, () => {
+        console.log('[IMAP IDLE] 새 메일 감지됨, syncMail 실행');
+        syncMail();
+      });
+    } else {
+      console.log('[DIAG] mail_settings 정보가 부족하여 IMAP IDLE 연결 생략');
+    }
+  } catch (e) {
+    console.error('[IMAP IDLE] 초기화 실패:', e);
+  }
   // macOS에서 Dock 아이콘을 icon.png로 지정
   if (process.platform === 'darwin') {
     app.dock.setIcon(path.join(__dirname, 'assets', 'icon.png'));
   }
   createWindow(); // 창 생성
-  setupMailIpc(mainWindow); // 메일 핸들러 연결
+  mailModule.setupMailIpc(mainWindow); // 메일 핸들러 연결
 
   // 휴지통 비우기 IPC 핸들러 등록
   ipcMain.handle('delete-trash-todos', () => {
@@ -618,8 +637,8 @@ app.whenReady().then(() => {
     }
   };
 
-  setInterval(syncMail, 60000);
-  syncMail();
+  setInterval(syncMail, 60000); // 1분마다 메일 동기화 (polling)
+  syncMail(); // 앱 시작 시 1회 동기화
 
 });
 app.on('window-all-closed', () => { if (process.platform === 'darwin') app.quit(); });

@@ -1,6 +1,7 @@
 /**
  * 1. 상태 관리 변수
  */
+function renderList(sortedTodos) {
     // --- 휴지통 DOM과 이벤트는 최초 1회만 생성/바인딩 ---
     let trash = document.getElementById('todo-trash-bin');
     if (!trash) {
@@ -215,55 +216,6 @@
         if (isUrgent) li.classList.add('urgent-blink');
         list.appendChild(li);
     });
-                refreshDisplay();
-            };
-        }
-
-        // 완료 토글 (글자 클릭)
-        li.querySelector('.task').onclick = async () => {
-            const currentFlag = item.todo_flag === 2 ? 1 : 2;
-            if (typeof item.id === 'string' && item.id.startsWith('mail-')) {
-                await window.electronAPI.setEmailTodoFlag(item.id.replace('mail-', ''), currentFlag);
-            } else {
-                await window.electronAPI.setTodoComplete(item.id, currentFlag);
-            }
-            refreshDisplay();
-        };
-
-        // 메모 필드 토글 및 자동 저장
-        const memoArea = li.querySelector('.memo');
-        li.querySelector('.memo-edit-btn').onclick = (e) => {
-            e.stopPropagation();
-            memoArea.style.display = memoArea.style.display === 'none' ? 'block' : 'none';
-        };
-        memoArea.oninput = (e) => window.electronAPI.saveMemo(item.id, e.target.value);
-
-        // 제외 버튼
-        li.querySelector('.exclude-btn').onclick = async (e) => {
-            e.stopPropagation();
-            if (confirm('할일 목록에서 제외하시겠습니까?')) {
-                if (typeof item.id === 'string' && item.id.startsWith('mail-')) {
-                    // 제목에서 단어 분리 후 sentence 타입 keyword로 저장
-                    const subject = item.task || '';
-                    // 한글, 영문, 숫자 단어 추출 (1글자 이상)
-                    const words = (subject.match(/[\p{L}\p{N}]+/gu) || []).map(w => w.trim()).filter(w => w.length > 0);
-                    const uniqueWords = [...new Set(words)];
-                    for (const word of uniqueWords) {
-                        if (word.length > 0) {
-                            await window.electronAPI.insertKeyword(word, 'sentence');
-                        }
-                    }
-                    await window.electronAPI.setEmailTodoFlag(item.id.replace('mail-', ''), 0);
-                } else {
-                    await window.electronAPI.excludeTodo(item.id);
-                }
-                refreshDisplay();
-            }
-        };
-
-        if (isUrgent) li.classList.add('urgent-blink');
-        list.appendChild(li);
-    });
 }
 
 /**
@@ -274,9 +226,9 @@ async function refreshDisplay() {
     isRefreshing = true;
 
     try {
-        console.log('[%s] 데이터 로드 시작...', new Date().toLocaleTimeString());
+       // console.log('[%s] 데이터 로드 시작...', new Date().toLocaleTimeString());
         const todos = await window.electronAPI.getTodos();
-        console.log('수신 데이터:', todos);
+       // console.log('수신 데이터:', todos);
         
         if (Array.isArray(todos)) {
             renderList(todos);

@@ -75,7 +75,7 @@ function markTodoEmails() {
         bodyText.includes(kw)
       ) {
         if (mail.todo_flag !== 9) {
-          console.log(`[EXCLUDE] subject: '${subjectText}', keyword: '${kw}' → 제외 처리`);
+       //   console.log(`[EXCLUDE] subject: '${subjectText}', keyword: '${kw}' → 제외 처리`);
           updateExclude.run(mail.id);
         }
         excluded = true;

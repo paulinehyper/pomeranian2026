@@ -771,7 +771,7 @@
                         };
                         // 항상 최신 메모 값 반영
                         const cardData = card.__itemData || {};
-                        console.log('[DEBUG] cardData for email card:', cardData);
+                       // console.log('[DEBUG] cardData for email card:', cardData);
                         memoLabel.textContent = cardData.memo && cardData.memo.trim() ? cardData.memo : '메모';
                         memoArea.value = cardData.memo || '';
                         memoArea.oninput = null; // oninput 저장 제거(엔터로만 저장)
@@ -781,7 +781,7 @@
                             const id = card.getAttribute('data-id');
                             const val = memoArea.value.trim();
                             // Debug log for memo save
-                            console.log('[DEBUG] saveMemo called for email card:', { id, val });
+                          //  console.log('[DEBUG] saveMemo called for email card:', { id, val });
                             window.electronAPI.saveMemo(id, val); // val이 빈 문자열이어도 저장
                             memoLabel.textContent = val ? val : '메모';
                             memoArea.style.display = 'none';
@@ -1132,7 +1132,7 @@ async function refreshAll() {
     : '<p style="text-align:center;color:#bbb;padding:10px;">등록된 할일이 없습니다.</p>';
 
   let emailTodos = await window.electronAPI.getTodoEmails();
-  console.log('getTodoEmails result:', emailTodos); // ← 전체 결과 확인
+  //console.log('getTodoEmails result:', emailTodos); // ← 전체 결과 확인
 
   
   const emailCount = (emailTodos && emailTodos.length) ? emailTodos.length : 0;
